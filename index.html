@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WB Election Results 2026 — Live ECI</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#080a0f;--surface:#10131a;--card:#161b26;--border:#1e2535;
+    --accent:#f59e0b;--blue:#3b82f6;--green:#22c55e;--red:#ef4444;
+    --text:#dde1ec;--muted:#5a6380;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+  body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");opacity:.45;}
+
+  header{position:sticky;top:0;z-index:100;background:rgba(8,10,15,.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);}
+  .hdr{max-width:1080px;margin:0 auto;padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;gap:1rem;}
+  .hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;color:var(--accent);}
+  .hdr-sub{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.08em;margin-left:.5rem;}
+  .live-pill{display:flex;align-items:center;gap:.35rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.12em;color:var(--green);text-transform:uppercase;}
+  .live-pill::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.4s ease infinite;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .rbtn{background:none;border:1px solid var(--border);color:var(--muted);padding:.3rem .8rem;border-radius:6px;cursor:pointer;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.08em;display:flex;align-items:center;gap:.35rem;transition:all .2s;}
+  .rbtn:hover{border-color:var(--accent);color:var(--accent);}
+  .rbtn.spin svg{animation:rot .7s linear infinite;}
+  @keyframes rot{to{transform:rotate(360deg);}}
+
+  main{max-width:1080px;margin:0 auto;padding:1.5rem;}
+
+  #loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:55vh;gap:1rem;}
+  .ring{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:rot .75s linear infinite;}
+  .ldtxt{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;animation:blink 1.2s step-end infinite;}
+  .ldproxy{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--muted);opacity:.6;margin-top:.3rem;}
+
+  #errbox{display:none;text-align:center;padding:3rem 1rem;}
+  .errtitle{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--red);letter-spacing:.06em;margin-bottom:.6rem;}
+  .errsub{font-size:.78rem;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.9;}
+  .errsub a{color:var(--blue);text-decoration:none;}
+
+  #content{display:none;}
+  .fade{animation:fadeUp .45s ease both;}
+  .fade2{animation:fadeUp .45s .1s ease both;}
+  .fade3{animation:fadeUp .45s .2s ease both;}
+  .fade4{animation:fadeUp .45s .3s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  .banner{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.4rem 1.8rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.2rem;margin-bottom:1.5rem;}
+  .b-state{font-family:'Bebas Neue',sans-serif;font-size:2.6rem;letter-spacing:.05em;line-height:1;}
+  .b-meta{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--muted);letter-spacing:.07em;margin-top:.25rem;}
+  .b-stats{display:flex;gap:1.6rem;flex-wrap:wrap;}
+  .bstat .v{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;line-height:1;}
+  .bstat .k{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.1em;color:var(--muted);margin-top:.2rem;text-transform:uppercase;}
+
+  .sec-label{font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:.7rem;}
+  .bar-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.3rem 1.6rem;margin-bottom:1.5rem;}
+  .maj-info{font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);margin-bottom:.8rem;}
+  .maj-info span{color:var(--accent);}
+  .bar-track{height:32px;background:var(--bg);border-radius:6px;display:flex;overflow:hidden;position:relative;}
+  .seg{height:100%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:.65rem;color:#fff;font-weight:500;transition:width 1s cubic-bezier(.4,0,.2,1);white-space:nowrap;overflow:hidden;min-width:0;}
+  .maj-line{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);opacity:.8;pointer-events:none;}
+  .leg{display:flex;flex-wrap:wrap;gap:.7rem 1.3rem;margin-top:1rem;}
+  .legitem{display:flex;align-items:center;gap:.4rem;font-size:.71rem;color:var(--muted);}
+  .legdot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem;margin-bottom:1.5rem;}
+  .pcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem 1.4rem;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+  .pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pc);}
+  .pcard:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--pc) 40%,var(--border));}
+  .pc-abbr{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.07em;color:var(--pc);line-height:1;}
+  .pc-full{font-size:.7rem;color:var(--muted);line-height:1.35;margin:.2rem 0 .9rem;}
+  .pc-seats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;}
+  .pcseat{text-align:center;}
+  .pcseat .sv{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1;color:var(--text);}
+  .pcseat.ld .sv{color:var(--pc);}
+  .pcseat .sk{font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;margin-top:.15rem;}
+
+  .tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;}
+  thead{background:var(--surface);}
+  th{padding:.65rem 1.1rem;text-align:left;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);}
+  th:not(:first-child){text-align:center;}
+  td{padding:.7rem 1.1rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+  td:not(:first-child){text-align:center;}
+  tr:last-child td{border-bottom:none;}
+  .totrow{background:var(--surface);}
+  .totrow td{font-family:'DM Mono',monospace;font-size:.73rem;font-weight:600;color:var(--accent);}
+  .pname{display:flex;align-items:center;gap:.7rem;}
+  .pip{width:5px;height:26px;border-radius:3px;flex-shrink:0;}
+  .badge{display:inline-block;border-radius:4px;padding:.08rem .45rem;font-family:'DM Mono',monospace;font-size:.65rem;font-weight:500;}
+  .won-b{background:color-mix(in srgb,var(--green) 14%,transparent);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 28%,transparent);}
+  .ld-b{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);}
+  .nil{color:var(--muted);}
+
+  .foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;padding:.7rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:.63rem;color:var(--muted);}
+  .foot a{color:var(--blue);text-decoration:none;}
+
+  @media(max-width:580px){
+    main{padding:1rem;}
+    .b-state{font-size:2rem;}
+    .hdr-sub{display:none;}
+    .cards{grid-template-columns:1fr;}
+    th,td{padding:.55rem .7rem;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hdr">
+    <div>
+      <span class="hdr-title">ECI LIVE</span>
+      <span class="hdr-sub">ResultAcGenMay2026 · West Bengal</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:.9rem;">
+      <div class="live-pill">Live</div>
+      <button class="rbtn" id="rbtn" onclick="load()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        </svg>REFRESH
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="loading">
+    <div class="ring"></div>
+    <div class="ldtxt">Fetching live ECI data…</div>
+    <div class="ldproxy" id="proxyStatus"></div>
+  </div>
+  <div id="errbox">
+    <div class="errtitle">Fetch Failed</div>
+    <div class="errsub">
+      All CORS proxies failed or ECI server is unreachable right now.<br><br>
+      <a href="https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm" target="_blank">→ Open directly on ECI website ↗</a><br><br>
+      <span style="font-size:.58rem;opacity:.6">Try refreshing in a few seconds.</span>
+    </div>
+  </div>
+  <div id="content"></div>
+</main>
+
+<script>
+const ECI_URL = 'https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm';
+
+// Proxy list — tried in sequence, first success wins
+const PROXIES = [
+  { name:'allorigins-raw',  url: u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,  mode:'text' },
+  { name:'allorigins-json', url: u => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,  mode:'json' },
+  { name:'codetabs',        url: u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`, mode:'text' },
+  { name:'thingproxy',      url: u => `https://thingproxy.freeboard.io/fetch/${u}`,                   mode:'text' },
+  { name:'htmldriven',      url: u => `https://cors.eu.org/${u}`,                                     mode:'text' },
+];
+
+// ── Party colour map ───────────────────────────────────────
+const COLORS = {
+  BJP:'#f97316', AITC:'#10b981', BGPM:'#a78bfa',
+  INC:'#3b82f6', 'CPI(M)':'#ef4444', BSP:'#06b6d4',
+  SP:'#e11d48',  OTH:'#64748b'
+};
+function partyKey(n=''){
+  const u=n.toUpperCase();
+  if(u.includes('BJP')||u.includes('BHARATIYA JANATA')) return 'BJP';
+  if(u.includes('AITC')||u.includes('TRINAMOOL'))       return 'AITC';
+  if(u.includes('BGPM')||u.includes('GORKHA PRAJATANTRIK')) return 'BGPM';
+  if(u.includes(' INC')||u.includes('NATIONAL CONGRESS')&&!u.includes('TRINAMOOL')) return 'INC';
+  if(u.includes('CPI'))                                  return 'CPI(M)';
+  if(u.includes('BSP')||u.includes('BAHUJAN'))           return 'BSP';
+  return 'OTH';
+}
+function col(name){ return COLORS[partyKey(name)] || COLORS.OTH; }
+
+// ── Fetch with proxy fallback ──────────────────────────────
+async function fetchHTML(){
+  for(const p of PROXIES){
+    try{
+      document.getElementById('proxyStatus').textContent = 'trying: '+p.name;
+      const r = await fetch(p.url(ECI_URL), {signal:AbortSignal.timeout(9000)});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      let html='';
+      if(p.mode==='json'){
+        const j=await r.json();
+        html = j.contents || j.html || '';
+      } else {
+        html = await r.text();
+      }
+      if(html && html.length>800 && html.includes('<table')){
+        console.log('✓ proxy used:', p.name);
+        return html;
+      }
+      throw new Error('Response too short or no table');
+    } catch(e){ console.warn(p.name,'failed:',e.message); }
+  }
+  throw new Error('All proxies failed');
+}
+
+// ── Parse ECI HTML ─────────────────────────────────────────
+function parse(html){
+  const doc = new DOMParser().parseFromString(html,'text/html');
+
+  // State + total ACs
+  let stateName='West Bengal', totalAC=294;
+  const h2 = doc.querySelector('h2');
+  if(h2){ const m=h2.textContent.match(/(.+?)\s*\(Total AC\s*:\s*(\d+)\)/); if(m){stateName=m[1].trim();totalAC=+m[2];} }
+
+  // Timestamp
+  let timestamp='';
+  const bt=doc.body?.textContent||'';
+  const tm=bt.match(/Last Updated at\s+(.+)/i);
+  if(tm) timestamp=tm[1].trim().replace(/\s+/g,' ');
+
+  // Find the party results table
+  let rows=[];
+  for(const tbl of doc.querySelectorAll('table')){
+    const ths=[...tbl.querySelectorAll('th')].map(t=>t.textContent.trim().toLowerCase());
+    if(!ths.some(h=>h.includes('party'))) continue;
+
+    // Detect column indices
+    let ci={party:-1,won:-1,lead:-1,total:-1};
+    ths.forEach((h,i)=>{
+      if(h.includes('party'))       ci.party=i;
+      else if(h==='won')            ci.won=i;
+      else if(h.includes('lead'))   ci.lead=i;
+      else if(h==='total'||h.includes('total')) ci.total=i;
+    });
+    if(ci.party<0) continue;
+
+    for(const tr of tbl.querySelectorAll('tr')){
+      const tds=[...tr.querySelectorAll('td')];
+      if(tds.length<2) continue;
+      const name=(tds[ci.party>=0?ci.party:0]?.textContent||'').trim();
+      if(!name||name.toLowerCase()==='total') continue;
+
+      let won=0,lead=0,total=0;
+      // Use mapped columns
+      if(ci.won>=0)   won  =parseInt(tds[ci.won]?.textContent)||0;
+      if(ci.lead>=0)  lead =parseInt(tds[ci.lead]?.textContent)||0;
+      if(ci.total>=0) total=parseInt(tds[ci.total]?.textContent)||0;
+
+      // Positional fallback (3 or 4 data cols)
+      if(!won&&!lead&&!total&&tds.length>=3){
+        won  =parseInt(tds[1]?.textContent)||0;
+        lead =parseInt(tds[2]?.textContent)||0;
+        total=parseInt(tds[3]?.textContent)||(won+lead);
+      }
+      if(!total) total=won+lead;
+      if(name&&total>0) rows.push({name,won,lead,total});
+    }
+    if(rows.length) break;
+  }
+
+  // Fallback: parse the big headline numbers (e.g. "BJP\n42")
+  if(!rows.length){
+    const allEls=[...doc.querySelectorAll('h1,h2,h3,h4,h5,h6,p,div')];
+    let lastName='';
+    for(const el of allEls){
+      const t=(el.children.length===0?el.textContent:'').trim();
+      if(!t) continue;
+      if(/^\d{1,3}$/.test(t)&&lastName){
+        rows.push({name:lastName,won:0,lead:+t,total:+t});
+        lastName='';
+      } else if(/^[A-Z][A-Z()\s\-]{1,30}$/.test(t)&&!t.includes('TOTAL')){
+        lastName=t;
+      }
+    }
+  }
+
+  return {stateName,totalAC,timestamp,rows};
+}
+
+// ── Render ─────────────────────────────────────────────────
+function render({stateName,totalAC,timestamp,rows}){
+  const majority=Math.ceil(totalAC/2);
+  const totalWon =rows.reduce((s,r)=>s+r.won,0);
+  const totalLead=rows.reduce((s,r)=>s+r.lead,0);
+  const totalSeats=rows.reduce((s,r)=>s+r.total,0);
+  const majPct=totalAC>0?(majority/totalAC*100).toFixed(2):50;
+
+  function abbr(name){
+    const p=name.split(' - ');
+    return p.length>1?p[p.length-1]:partyKey(name);
+  }
+  function fullName(name){
+    const p=name.split(' - ');
+    return p.length>1?p.slice(0,-1).join(' - '):name;
+  }
+
+  const segs=rows.map(r=>{
+    const w=totalAC>0?(r.total/totalAC*100).toFixed(2):0;
+    return `<div class="seg" style="width:${w}%;background:${col(r.name)};" title="${r.name}: ${r.total}">${r.total>6?r.total:''}</div>`;
+  }).join('');
+
+  const legend=rows.map(r=>`
+    <div class="legitem">
+      <div class="legdot" style="background:${col(r.name)}"></div>
+      ${abbr(r.name)} · ${r.total}
+    </div>`).join('');
+
+  const cards=rows.map(r=>`
+    <div class="pcard" style="--pc:${col(r.name)}">
+      <div class="pc-abbr">${abbr(r.name)}</div>
+      <div class="pc-full">${fullName(r.name)}</div>
+      <div class="pc-seats">
+        <div class="pcseat"><div class="sv">${r.won}</div><div class="sk">Won</div></div>
+        <div class="pcseat ld"><div class="sv">${r.lead}</div><div class="sk">Leading</div></div>
+        <div class="pcseat"><div class="sv">${r.total}</div><div class="sk">Total</div></div>
+      </div>
+    </div>`).join('');
+
+  const trs=rows.map(r=>{
+    const share=totalSeats>0?((r.total/totalSeats)*100).toFixed(1)+'%':'—';
+    return `<tr>
+      <td><div class="pname"><div class="pip" style="background:${col(r.name)}"></div><span>${r.name}</span></div></td>
+      <td>${r.won>0?`<span class="badge won-b">${r.won}</span>`:'<span class="nil">—</span>'}</td>
+      <td>${r.lead>0?`<span class="badge ld-b">${r.lead}</span>`:'<span class="nil">—</span>'}</td>
+      <td style="font-weight:600">${r.total}</td>
+      <td style="color:var(--muted)">${share}</td>
+    </tr>`;
+  }).join('');
+
+  const noData=rows.length===0?
+    `<div style="padding:1.5rem;font-family:'DM Mono',monospace;font-size:.72rem;color:var(--muted);text-align:center;">
+      No party-wise data found yet — counting may not have started.<br>
+      <a href="https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm" target="_blank" style="color:var(--blue);">→ Check ECI directly</a>
+     </div>`:'';
+
+  document.getElementById('content').innerHTML=`
+  <div class="banner fade">
+    <div>
+      <div class="b-state">${stateName}</div>
+      <div class="b-meta">General Election to Assembly Constituencies · May 2026</div>
+    </div>
+    <div class="b-stats">
+      <div class="bstat"><div class="v" style="color:var(--accent)">${totalAC}</div><div class="k">Total Seats</div></div>
+      <div class="bstat"><div class="v" style="color:var(--green)">${totalWon}</div><div class="k">Won</div></div>
+      <div class="bstat"><div class="v" style="color:var(--blue)">${totalLead}</div><div class="k">Leading</div></div>
+      <div class="bstat"><div class="v" style="color:var(--muted)">${majority}</div><div class="k">Majority</div></div>
+    </div>
+  </div>
+
+  <div class="fade2">
+    <div class="sec-label">Seat Distribution · ${totalSeats} / ${totalAC} reporting</div>
+    <div class="bar-wrap">
+      <div class="maj-info">Majority mark: <span>${majority} seats</span></div>
+      <div style="position:relative;padding-top:22px;">
+        <div style="position:absolute;top:2px;left:${majPct}%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:.58rem;color:var(--accent);white-space:nowrap;">▼ ${majority}</div>
+        <div class="bar-track">
+          ${segs}
+          <div class="maj-line" style="left:${majPct}%"></div>
+        </div>
+      </div>
+      <div class="leg">${legend}</div>
+    </div>
+  </div>
+
+  <div class="cards fade3">${cards}${noData}</div>
+
+  <div class="fade4">
+    <div class="sec-label">Party-Wise Results Table</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Party</th><th>Won</th><th>Leading</th><th>Total</th><th>Seat Share</th></tr></thead>
+        <tbody>
+          ${trs}
+          ${rows.length?`<tr class="totrow"><td>TOTAL</td><td>${totalWon}</td><td>${totalLead}</td><td>${totalSeats}</td><td>100%</td></tr>`:''}
+        </tbody>
+      </table>
+      ${noData}
+    </div>
+  </div>
+
+  <div class="foot fade4">
+    <span>${timestamp?'⏱ ECI last updated: '+timestamp:'Fetched live'}</span>
+    <a href="https://results.eci.gov.in/ResultAcGenMay2026/partywiseresult-S25.htm" target="_blank">→ View on ECI ↗</a>
+  </div>`;
+}
+
+// ── Main ───────────────────────────────────────────────────
+async function load(){
+  const btn=document.getElementById('rbtn');
+  btn.classList.add('spin');
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('content').style.display='none';
+  document.getElementById('errbox').style.display='none';
+  try{
+    const html=await fetchHTML();
+    const data=parse(html);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    render(data);
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('errbox').style.display='block';
+    console.error(e);
+  }finally{
+    btn.classList.remove('spin');
+  }
+}
+
+load();
+setInterval(load, 90000); // refresh every 90s
+</script>
+</body>
+</html>
